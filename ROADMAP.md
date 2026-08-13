@@ -79,8 +79,8 @@
 - [ ] Punkte-Verfall (konfigurierbar pro Event)
 
 ### Teilnehmer-Erlebnis
-- [ ] Teilnehmer-App: Self-Service (Punktestand, Verlauf, Badges)
-- [ ] Praemien-Shop (konfigurierbar pro Event)
+- [x] Teilnehmer-App: Self-Service (Punktestand, Verlauf, Rangliste, Profil)
+- [x] Praemien-Shop (Browse + Einloesung aus Teilnehmer-Sicht)
 - [ ] QR-Code am Band fuer Punktestand-Webseite
 - [ ] Push-Benachrichtigungen (Punkte erhalten, Level-Up, neue Praemien)
 
@@ -135,6 +135,7 @@
 **Ziel:** Vertrauen schaffen. Eltern einbinden, Sicherheit gewaehrleisten, Daten nutzen.
 
 ### Eltern-Portal
+- [x] Eltern-Ansicht Demo (Kinder-Uebersicht, Aktivitaeten-Feed, Kontakt)
 - [ ] Eltern-Auth (Magic Link, Code, eigener Account)
 - [ ] Live-Einblick (konfigurierbare Inhalte pro Event)
 - [ ] Eltern-Kommunikation (DM an Betreuer, Kontaktformular)
@@ -154,8 +155,8 @@
 
 ### Analytics & Dashboards
 - [ ] Drag-and-Drop Admin-Dashboard (Widgets)
-- [ ] Rollen-spezifische Dashboard-Ansichten (konfigurierbar)
-- [ ] Vorschau-Modus (Admin sieht App aus jeder Rolle + Testdaten)
+- [x] Rollen-spezifische Dashboard-Ansichten (Demo: 4 Rollen mit RoleSwitcher)
+- [x] Vorschau-Modus (Admin sieht App aus jeder Rolle + Testdaten)
 - [ ] Auto-Berichte (Tages-, Event-, benutzerdefiniert)
 - [ ] Event-Vergleich + Plattform-Benchmark
 - [ ] Live-Feed (Admin-Detail + Teilnehmer-Highlights)
