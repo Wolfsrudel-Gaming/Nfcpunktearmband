@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../config/theme.dart';
 import '../config/constants.dart';
 import '../models/participant.dart';
 import '../services/api_client.dart';
+import '../services/demo_service.dart';
 import '../services/offline_queue.dart';
+import '../providers/demo_provider.dart';
 
-class BookPointsScreen extends StatefulWidget {
+class BookPointsScreen extends ConsumerStatefulWidget {
   final Participant participant;
   final String eventId;
 
@@ -17,10 +20,10 @@ class BookPointsScreen extends StatefulWidget {
   });
 
   @override
-  State<BookPointsScreen> createState() => _BookPointsScreenState();
+  ConsumerState<BookPointsScreen> createState() => _BookPointsScreenState();
 }
 
-class _BookPointsScreenState extends State<BookPointsScreen> {
+class _BookPointsScreenState extends ConsumerState<BookPointsScreen> {
   int? _selectedAmount;
   final _customController = TextEditingController();
   String _reason = 'manual';
@@ -46,20 +49,46 @@ class _BookPointsScreenState extends State<BookPointsScreen> {
     if (amount == null || amount == 0) return;
 
     setState(() => _loading = true);
-
-    final body = {
-      'participantId': widget.participant.id,
-      'eventId': widget.eventId,
-      'amount': amount,
-      'reason': _reason,
-      'note': _noteController.text.isEmpty ? null : _noteController.text,
-    };
+    final isDemo = ref.read(demoModeProvider);
 
     try {
-      final result =
-          await ApiClient().post<Map<String, dynamic>>('/api/points', data: body);
+      int balance;
+      if (isDemo) {
+        final result = await DemoService().bookPoints(
+          participantId: widget.participant.id,
+          eventId: widget.eventId,
+          amount: amount,
+          reason: _reason,
+          note: _noteController.text.isEmpty ? null : _noteController.text,
+        );
+        balance = result['balance'] as int;
+      } else {
+        final body = {
+          'participantId': widget.participant.id,
+          'eventId': widget.eventId,
+          'amount': amount,
+          'reason': _reason,
+          'note': _noteController.text.isEmpty ? null : _noteController.text,
+        };
+        try {
+          final result = await ApiClient()
+              .post<Map<String, dynamic>>('/api/points', data: body);
+          balance = result['balance'] as int;
+        } catch (e) {
+          await OfflineQueue().enqueue('POST', '/api/points', data: body);
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Offline gespeichert — wird synchronisiert'),
+              backgroundColor: AppTheme.warning,
+            ),
+          );
+          Navigator.pop(context, true);
+          return;
+        }
+      }
+
       if (!mounted) return;
-      final balance = result['balance'] as int;
       HapticFeedback.mediumImpact();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -71,15 +100,13 @@ class _BookPointsScreenState extends State<BookPointsScreen> {
       );
       Navigator.pop(context, true);
     } catch (e) {
-      await OfflineQueue().enqueue('POST', '/api/points', data: body);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Offline gespeichert — wird synchronisiert'),
-          backgroundColor: AppTheme.warning,
+          content: Text('Fehler: $e'),
+          backgroundColor: AppTheme.danger,
         ),
       );
-      Navigator.pop(context, true);
     } finally {
       if (mounted) setState(() => _loading = false);
     }

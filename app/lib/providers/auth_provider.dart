@@ -2,7 +2,9 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user.dart';
 import '../services/api_client.dart';
+import '../services/demo_service.dart';
 import '../services/socket_service.dart';
+import 'demo_provider.dart';
 
 final authProvider =
     AsyncNotifierProvider<AuthNotifier, User?>(AuthNotifier.new);
@@ -10,10 +12,23 @@ final authProvider =
 class AuthNotifier extends AsyncNotifier<User?> {
   @override
   Future<User?> build() async {
+    if (ref.read(demoModeProvider)) {
+      final demo = DemoService();
+      if (demo.isInitialized) return demo.login();
+      return null;
+    }
     final api = ApiClient();
     await api.init();
     if (!api.isAuthenticated) return null;
     return _decodeToken(api.token!);
+  }
+
+  Future<void> loginDemo() async {
+    state = const AsyncLoading();
+    ref.read(demoModeProvider.notifier).state = true;
+    final demo = DemoService();
+    await demo.init();
+    state = AsyncData(demo.login());
   }
 
   Future<void> login(String email, String pin) async {
@@ -35,8 +50,13 @@ class AuthNotifier extends AsyncNotifier<User?> {
   }
 
   Future<void> logout() async {
-    SocketService().disconnect();
-    await ApiClient().clearToken();
+    final isDemo = ref.read(demoModeProvider);
+    if (isDemo) {
+      ref.read(demoModeProvider.notifier).state = false;
+    } else {
+      SocketService().disconnect();
+      await ApiClient().clearToken();
+    }
     state = const AsyncData(null);
   }
 

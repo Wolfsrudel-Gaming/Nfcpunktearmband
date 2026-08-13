@@ -28,7 +28,7 @@
 ### Flutter App (Android + iOS)
 - [x] Projektstruktur + State-Management
 - [x] NFC-Scan: Tag lesen, ID + Token validieren
-- [ ] NFC-Schreiben: Server-Token + Notfalldaten auf Tag
+- [x] NFC-Schreiben: Server-Token + Notfalldaten auf Tag
 - [ ] QR-Code Scanner als Alternative
 - [x] Login-Screen (PIN + Geraetebindung)
 - [x] Scan-Screen: Band antippen, Profil anzeigen

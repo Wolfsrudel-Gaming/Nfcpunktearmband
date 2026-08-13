@@ -6,10 +6,15 @@ import '../models/reward.dart';
 import '../models/participant.dart';
 import '../providers/event_provider.dart';
 import '../providers/participant_provider.dart';
+import '../providers/demo_provider.dart';
 import '../services/api_client.dart';
+import '../services/demo_service.dart';
 
 final _rewardsProvider = FutureProvider.family<List<Reward>, String>(
   (ref, eventId) async {
+    if (ref.read(demoModeProvider)) {
+      return DemoService().getRewards(eventId);
+    }
     final data =
         await ApiClient().get<List<dynamic>>('/api/rewards/event/$eventId');
     return data
@@ -190,7 +195,7 @@ class _RewardCard extends ConsumerWidget {
   }
 }
 
-class _RedeemSheet extends StatefulWidget {
+class _RedeemSheet extends ConsumerStatefulWidget {
   final Reward reward;
   final List<Participant> participants;
   final String eventId;
@@ -202,21 +207,30 @@ class _RedeemSheet extends StatefulWidget {
   });
 
   @override
-  State<_RedeemSheet> createState() => _RedeemSheetState();
+  ConsumerState<_RedeemSheet> createState() => _RedeemSheetState();
 }
 
-class _RedeemSheetState extends State<_RedeemSheet> {
+class _RedeemSheetState extends ConsumerState<_RedeemSheet> {
   bool _loading = false;
 
   Future<void> _redeem(Participant participant) async {
     setState(() => _loading = true);
     try {
-      final result =
-          await ApiClient().post<Map<String, dynamic>>('/api/rewards/redeem', data: {
-        'rewardId': widget.reward.id,
-        'participantId': participant.id,
-        'eventId': widget.eventId,
-      });
+      Map<String, dynamic> result;
+      if (ref.read(demoModeProvider)) {
+        result = await DemoService().redeemReward(
+          rewardId: widget.reward.id,
+          participantId: participant.id,
+          eventId: widget.eventId,
+        );
+      } else {
+        result = await ApiClient()
+            .post<Map<String, dynamic>>('/api/rewards/redeem', data: {
+          'rewardId': widget.reward.id,
+          'participantId': participant.id,
+          'eventId': widget.eventId,
+        });
+      }
       if (!mounted) return;
       HapticFeedback.heavyImpact();
       Navigator.pop(context);

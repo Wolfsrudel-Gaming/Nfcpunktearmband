@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../config/theme.dart';
 import '../providers/auth_provider.dart';
 import '../providers/event_provider.dart';
+import '../providers/demo_provider.dart';
+import '../providers/participant_provider.dart';
+import '../services/demo_service.dart';
 import 'scan_screen.dart';
 import 'points_screen.dart';
 import 'rewards_screen.dart';
@@ -28,14 +31,35 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    ref.listenManual(eventsProvider, (_, __) {});
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _autoSelectDemoEvent();
+    });
+  }
+
+  void _autoSelectDemoEvent() {
+    final isDemo = ref.read(demoModeProvider);
+    if (!isDemo) return;
+    final events = ref.read(eventsProvider).valueOrNull;
+    if (events != null && events.isNotEmpty) {
+      ref.read(selectedEventProvider.notifier).state = events.first;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final user = ref.watch(authProvider).valueOrNull;
+    final isDemo = ref.watch(demoModeProvider);
     final selectedEvent = ref.watch(selectedEventProvider);
     final events = ref.watch(eventsProvider);
+
+    if (isDemo && selectedEvent == null) {
+      events.whenData((list) {
+        if (list.isNotEmpty) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            ref.read(selectedEventProvider.notifier).state = list.first;
+          });
+        }
+      });
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -54,37 +78,90 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ),
         actions: [
+          if (isDemo)
+            IconButton(
+              icon: const Icon(Icons.restart_alt),
+              onPressed: () async {
+                await DemoService().reset();
+                ref.invalidate(eventsProvider);
+                ref.invalidate(participantsProvider);
+                ref.invalidate(leaderboardProvider);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Demo zurückgesetzt')),
+                  );
+                }
+              },
+              tooltip: 'Demo zurücksetzen',
+            ),
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () => ref.read(authProvider.notifier).logout(),
+            onPressed: () {
+              ref.read(selectedEventProvider.notifier).state = null;
+              ref.read(authProvider.notifier).logout();
+            },
             tooltip: 'Abmelden',
           ),
         ],
       ),
-      body: selectedEvent == null
-          ? Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+      body: Column(
+        children: [
+          if (isDemo)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              color: AppTheme.violet.withAlpha(20),
+              child: Row(
                 children: [
-                  Icon(Icons.event, size: 64,
-                      color: Theme.of(context).colorScheme.outlineVariant),
-                  const SizedBox(height: 16),
+                  Icon(Icons.science_outlined,
+                      size: 16, color: AppTheme.violet),
+                  const SizedBox(width: 8),
                   Text(
-                    'Bitte ein Event wählen',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                  ),
-                  const SizedBox(height: 12),
-                  ElevatedButton.icon(
-                    onPressed: () => _showEventPicker(context),
-                    icon: const Icon(Icons.list),
-                    label: const Text('Event auswählen'),
+                    'Demo-Modus — Lokale Daten, kein Server',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.violet,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ],
               ),
-            )
-          : _screens[_currentIndex],
+            ),
+          Expanded(
+            child: selectedEvent == null
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.event,
+                            size: 64,
+                            color:
+                                Theme.of(context).colorScheme.outlineVariant),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Bitte ein Event wählen',
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                              ),
+                        ),
+                        const SizedBox(height: 12),
+                        ElevatedButton.icon(
+                          onPressed: () => _showEventPicker(context),
+                          icon: const Icon(Icons.list),
+                          label: const Text('Event auswählen'),
+                        ),
+                      ],
+                    ),
+                  )
+                : _screens[_currentIndex],
+          ),
+        ],
+      ),
       bottomNavigationBar: selectedEvent != null
           ? NavigationBar(
               selectedIndex: _currentIndex,
@@ -152,11 +229,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             ? Text(event.location!,
                                 style: const TextStyle(fontSize: 12))
                             : null,
-                        trailing: ref.read(selectedEventProvider)?.id == event.id
-                            ? Icon(Icons.check_circle, color: AppTheme.brand)
-                            : null,
+                        trailing:
+                            ref.read(selectedEventProvider)?.id == event.id
+                                ? Icon(Icons.check_circle,
+                                    color: AppTheme.brand)
+                                : null,
                         onTap: () {
-                          ref.read(selectedEventProvider.notifier).state = event;
+                          ref.read(selectedEventProvider.notifier).state =
+                              event;
                           Navigator.pop(ctx);
                         },
                       ))
