@@ -26,15 +26,15 @@
 - [x] Seed-Daten fuer Demo-Event
 
 ### Flutter App (Android + iOS)
-- [ ] Projektstruktur + State-Management
-- [ ] NFC-Scan: Tag lesen, ID + Token validieren
+- [x] Projektstruktur + State-Management
+- [x] NFC-Scan: Tag lesen, ID + Token validieren
 - [ ] NFC-Schreiben: Server-Token + Notfalldaten auf Tag
 - [ ] QR-Code Scanner als Alternative
-- [ ] Login-Screen (PIN + Geraetebindung)
-- [ ] Scan-Screen: Band antippen, Profil anzeigen
-- [ ] Punkte-Buchung: Schnellwahl + manuell + Grund
-- [ ] Praemien-Ansicht + Einloesung
-- [ ] Offline-Queue: Buchungen zwischenspeichern + Retry
+- [x] Login-Screen (PIN + Geraetebindung)
+- [x] Scan-Screen: Band antippen, Profil anzeigen
+- [x] Punkte-Buchung: Schnellwahl + manuell + Grund
+- [x] Praemien-Ansicht + Einloesung
+- [x] Offline-Queue: Buchungen zwischenspeichern + Retry
 - [ ] Push-Benachrichtigungen (Firebase)
 
 ### Web-Dashboard (Next.js)
