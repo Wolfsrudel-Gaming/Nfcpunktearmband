@@ -6,10 +6,14 @@ import '../providers/event_provider.dart';
 import '../providers/demo_provider.dart';
 import '../providers/participant_provider.dart';
 import '../services/demo_service.dart';
+import '../widgets/role_switcher.dart';
 import 'scan_screen.dart';
 import 'points_screen.dart';
 import 'rewards_screen.dart';
 import 'leaderboard_screen.dart';
+import 'teilnehmer/tn_home_screen.dart';
+import 'eltern/eltern_home_screen.dart';
+import 'admin/admin_home_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -21,7 +25,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _currentIndex = 0;
 
-  final _screens = const [
+  final _betreuerScreens = const [
     ScanScreen(),
     PointsScreen(),
     RewardsScreen(),
@@ -48,6 +52,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final isDemo = ref.watch(demoModeProvider);
+    final demoRole = ref.watch(demoRoleProvider);
     final selectedEvent = ref.watch(selectedEventProvider);
     final events = ref.watch(eventsProvider);
 
@@ -60,6 +65,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         }
       });
     }
+
+    final showOwnNav = !isDemo ||
+        demoRole == DemoRole.betreuer;
 
     return Scaffold(
       appBar: AppBar(
@@ -86,6 +94,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ref.invalidate(eventsProvider);
                 ref.invalidate(participantsProvider);
                 ref.invalidate(leaderboardProvider);
+                ref.read(demoActiveParticipantIdProvider.notifier).state = null;
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Demo zurückgesetzt')),
@@ -106,90 +115,87 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       body: Column(
         children: [
-          if (isDemo)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              color: AppTheme.violet.withAlpha(20),
-              child: Row(
-                children: [
-                  Icon(Icons.science_outlined,
-                      size: 16, color: AppTheme.violet),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Demo-Modus — Lokale Daten, kein Server',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.violet,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          if (isDemo) const RoleSwitcher(),
           Expanded(
             child: selectedEvent == null
-                ? Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.event,
-                            size: 64,
-                            color:
-                                Theme.of(context).colorScheme.outlineVariant),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Bitte ein Event wählen',
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleMedium
-                              ?.copyWith(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurfaceVariant,
-                              ),
-                        ),
-                        const SizedBox(height: 12),
-                        ElevatedButton.icon(
-                          onPressed: () => _showEventPicker(context),
-                          icon: const Icon(Icons.list),
-                          label: const Text('Event auswählen'),
-                        ),
-                      ],
-                    ),
-                  )
-                : _screens[_currentIndex],
+                ? _buildNoEvent(context)
+                : _buildRoleContent(isDemo, demoRole),
           ),
         ],
       ),
-      bottomNavigationBar: selectedEvent != null
-          ? NavigationBar(
-              selectedIndex: _currentIndex,
-              onDestinationSelected: (i) => setState(() => _currentIndex = i),
-              destinations: const [
-                NavigationDestination(
-                  icon: Icon(Icons.nfc_outlined),
-                  selectedIcon: Icon(Icons.nfc),
-                  label: 'Scan',
+      bottomNavigationBar:
+          selectedEvent != null && showOwnNav ? _buildBetreuerNav() : null,
+    );
+  }
+
+  Widget _buildNoEvent(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.event,
+              size: 64,
+              color: Theme.of(context).colorScheme.outlineVariant),
+          const SizedBox(height: 16),
+          Text(
+            'Bitte ein Event wählen',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
-                NavigationDestination(
-                  icon: Icon(Icons.stars_outlined),
-                  selectedIcon: Icon(Icons.stars),
-                  label: 'Punkte',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.card_giftcard_outlined),
-                  selectedIcon: Icon(Icons.card_giftcard),
-                  label: 'Prämien',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.leaderboard_outlined),
-                  selectedIcon: Icon(Icons.leaderboard),
-                  label: 'Rangliste',
-                ),
-              ],
-            )
-          : null,
+          ),
+          const SizedBox(height: 12),
+          ElevatedButton.icon(
+            onPressed: () => _showEventPicker(context),
+            icon: const Icon(Icons.list),
+            label: const Text('Event auswählen'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRoleContent(bool isDemo, DemoRole demoRole) {
+    if (!isDemo || demoRole == DemoRole.betreuer) {
+      return _betreuerScreens[_currentIndex];
+    }
+    switch (demoRole) {
+      case DemoRole.teilnehmer:
+        return const TnHomeScreen();
+      case DemoRole.eltern:
+        return const ElternHomeScreen();
+      case DemoRole.admin:
+        return const AdminHomeScreen();
+      case DemoRole.betreuer:
+        return _betreuerScreens[_currentIndex];
+    }
+  }
+
+  NavigationBar _buildBetreuerNav() {
+    return NavigationBar(
+      selectedIndex: _currentIndex,
+      onDestinationSelected: (i) => setState(() => _currentIndex = i),
+      destinations: const [
+        NavigationDestination(
+          icon: Icon(Icons.nfc_outlined),
+          selectedIcon: Icon(Icons.nfc),
+          label: 'Scan',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.stars_outlined),
+          selectedIcon: Icon(Icons.stars),
+          label: 'Punkte',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.card_giftcard_outlined),
+          selectedIcon: Icon(Icons.card_giftcard),
+          label: 'Prämien',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.leaderboard_outlined),
+          selectedIcon: Icon(Icons.leaderboard),
+          label: 'Rangliste',
+        ),
+      ],
     );
   }
 
