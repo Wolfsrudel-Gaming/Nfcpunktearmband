@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:nfc_manager/nfc_manager.dart';
@@ -98,17 +99,7 @@ class NfcService {
                 final payload = String.fromCharCodes(record.payload.skip(1));
                 if (payload.startsWith('questband:')) {
                   try {
-                    final jsonStr = payload.substring('questband:'.length);
-                    final data = NfcTagData.fromJson(
-                        jsonDecode(jsonStr) as Map<String, dynamic>);
-                    if (localLookup != null) {
-                      final p = localLookup(tagUid);
-                      if (p != null) {
-                        onSuccess(p);
-                        NfcManager.instance.stopSession();
-                        return;
-                      }
-                    }
+                    jsonDecode(payload.substring('questband:'.length));
                   } catch (_) {}
                 }
               }
@@ -220,10 +211,11 @@ class NfcService {
     final available = await isAvailable;
     if (!available) return null;
 
-    NfcTagData? result;
+    final completer = Completer<NfcTagData?>();
     NfcManager.instance.startSession(
       alertMessage: 'Tag zum Lesen an das Gerät halten',
       onDiscovered: (NfcTag tag) async {
+        NfcTagData? result;
         final ndef = Ndef.from(tag);
         if (ndef?.cachedMessage != null) {
           for (final record in ndef!.cachedMessage!.records) {
@@ -238,12 +230,14 @@ class NfcService {
           }
         }
         NfcManager.instance.stopSession();
+        if (!completer.isCompleted) completer.complete(result);
       },
       onError: (error) async {
         NfcManager.instance.stopSession();
+        if (!completer.isCompleted) completer.complete(null);
       },
     );
-    return result;
+    return completer.future;
   }
 
   void stopScan() {

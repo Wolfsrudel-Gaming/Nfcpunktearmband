@@ -247,6 +247,7 @@ class _ParticipantProfileScreenState
   void _writeNfcTag() {
     final event = ref.read(selectedEventProvider);
     if (event == null) return;
+    final isDemo = ref.read(demoModeProvider);
 
     showDialog(
       context: context,
@@ -254,6 +255,7 @@ class _ParticipantProfileScreenState
       builder: (ctx) => _NfcWriteDialog(
         participant: _participant,
         eventId: event.id,
+        isDemo: isDemo,
         onDone: (tagUid) {
           HapticFeedback.heavyImpact();
           _refreshParticipant();
@@ -326,12 +328,14 @@ class _ParticipantProfileScreenState
 class _NfcWriteDialog extends StatefulWidget {
   final Participant participant;
   final String eventId;
+  final bool isDemo;
   final void Function(String tagUid) onDone;
 
   const _NfcWriteDialog({
     required this.participant,
     required this.eventId,
     required this.onDone,
+    this.isDemo = false,
   });
 
   @override
@@ -353,6 +357,11 @@ class _NfcWriteDialogState extends State<_NfcWriteDialog> {
       _status = 'waiting';
       _error = null;
     });
+
+    if (widget.isDemo) {
+      _simulateDemoWrite();
+      return;
+    }
 
     NfcService().writeTag(
       participantId: widget.participant.id,
@@ -377,9 +386,29 @@ class _NfcWriteDialogState extends State<_NfcWriteDialog> {
     );
   }
 
+  Future<void> _simulateDemoWrite() async {
+    await Future.delayed(const Duration(milliseconds: 1200));
+    if (!mounted) return;
+    final tagUid = List.generate(
+      7,
+      (i) => (i * 17 + widget.participant.id.hashCode + i * 31)
+          .toUnsigned(8)
+          .toRadixString(16)
+          .padLeft(2, '0'),
+    ).join(':');
+    await DemoService().assignNfcTag(widget.participant.id, tagUid);
+    if (!mounted) return;
+    setState(() => _status = 'done');
+    Future.delayed(const Duration(milliseconds: 800), () {
+      if (!mounted) return;
+      Navigator.pop(context);
+      widget.onDone(tagUid);
+    });
+  }
+
   @override
   void dispose() {
-    if (_status == 'waiting') NfcService().stopScan();
+    if (_status == 'waiting' && !widget.isDemo) NfcService().stopScan();
     super.dispose();
   }
 

@@ -48,9 +48,18 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
     );
   }
 
-  void _startScan() {
+  Future<void> _startScan() async {
     final event = ref.read(selectedEventProvider);
     if (event == null) return;
+    final isDemo = ref.read(demoModeProvider);
+
+    if (isDemo) {
+      final nfcAvailable = await NfcService().isAvailable;
+      if (!nfcAvailable) {
+        _showDemoParticipantPicker();
+        return;
+      }
+    }
 
     setState(() {
       _scanning = true;
