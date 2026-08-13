@@ -57,10 +57,5 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
-  assets:
-    - assets/images/
-
-  fonts:
-    - family: QuestBand
-      fonts:
-        - asset: assets/fonts/QuestBand-Regular.ttf
+  # assets:
+  #   - assets/images/
