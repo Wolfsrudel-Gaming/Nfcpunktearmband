@@ -10,20 +10,20 @@
 **Ziel:** Erster lauffaehiger End-to-End-Flow: Event anlegen, Teilnehmer registrieren, Armband scannen, Punkte buchen, Praemie einloesen.
 
 ### Backend
-- [ ] Node.js/Express Projektstruktur + TypeORM + PostgreSQL
-- [ ] Docker Compose Setup (PostgreSQL, Redis, MinIO, App)
-- [ ] Auth-System: PIN + Geraetebindung + JWT-Tokens
-- [ ] Event CRUD API (erstellen, konfigurieren, archivieren)
-- [ ] Teilnehmer-Verwaltung API (registrieren, zuweisen, suchen)
-- [ ] Punkte-Buchung API (Einzel + Batch, Gruende, Schnellwahl)
-- [ ] Praemien-Katalog API (CRUD, Einloesung, Limits)
-- [ ] Transaktions-Logging (append-only, signiert)
-- [ ] Socket.IO Grundstruktur (Live-Punktestand)
-- [ ] Redis Caching (Sessions, haeufige Abfragen)
-- [ ] BullMQ Setup (E-Mail-Queue, Cleanup-Jobs)
-- [ ] Winston Logging + Fehlerbehandlung
-- [ ] Health-Check Endpoints (/health, /ready)
-- [ ] Seed-Daten fuer Demo-Event
+- [x] Node.js/Express Projektstruktur + TypeORM + PostgreSQL
+- [x] Docker Compose Setup (PostgreSQL, Redis, MinIO, App)
+- [x] Auth-System: PIN + Geraetebindung + JWT-Tokens
+- [x] Event CRUD API (erstellen, konfigurieren, archivieren)
+- [x] Teilnehmer-Verwaltung API (registrieren, zuweisen, suchen)
+- [x] Punkte-Buchung API (Einzel + Batch, Gruende, Schnellwahl)
+- [x] Praemien-Katalog API (CRUD, Einloesung, Limits)
+- [x] Transaktions-Logging (append-only, signiert)
+- [x] Socket.IO Grundstruktur (Live-Punktestand)
+- [x] Redis Caching (Sessions, haeufige Abfragen)
+- [x] BullMQ Setup (E-Mail-Queue, Cleanup-Jobs)
+- [x] Winston Logging + Fehlerbehandlung
+- [x] Health-Check Endpoints (/health, /ready)
+- [x] Seed-Daten fuer Demo-Event
 
 ### Flutter App (Android + iOS)
 - [ ] Projektstruktur + State-Management
@@ -38,15 +38,15 @@
 - [ ] Push-Benachrichtigungen (Firebase)
 
 ### Web-Dashboard (Next.js)
-- [ ] Projektstruktur + Auth-Integration
-- [ ] Admin-Login
-- [ ] Event-Erstellung (Wizard, Grundeinstellungen)
-- [ ] Teilnehmer-Liste + Registrierung
-- [ ] Punkte-Uebersicht + manuelle Buchung
-- [ ] Praemien-Verwaltung
+- [x] Projektstruktur + Auth-Integration
+- [x] Admin-Login
+- [x] Event-Erstellung (Wizard, Grundeinstellungen)
+- [x] Teilnehmer-Liste + Registrierung
+- [x] Punkte-Uebersicht + manuelle Buchung
+- [x] Praemien-Verwaltung
 
 ### DevOps
-- [ ] GitHub Actions CI Pipeline (Lint, Test, Build)
+- [x] GitHub Actions CI Pipeline (Lint, Test, Build)
 - [ ] Docker Build + Push to Registry
 - [ ] Deployment auf eigenem Server
 - [ ] Prometheus + Grafana Monitoring
