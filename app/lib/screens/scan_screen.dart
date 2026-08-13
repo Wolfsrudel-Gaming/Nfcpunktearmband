@@ -20,6 +20,7 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
     with SingleTickerProviderStateMixin {
   bool _scanning = false;
   String? _error;
+  NfcAvailability? _nfcStatus;
   late AnimationController _pulseController;
 
   @override
@@ -29,6 +30,13 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
       vsync: this,
       duration: const Duration(seconds: 2),
     );
+    _refreshNfcStatus();
+  }
+
+  Future<void> _refreshNfcStatus() async {
+    final status = await NfcService().checkAvailability();
+    if (!mounted) return;
+    setState(() => _nfcStatus = status);
   }
 
   @override
@@ -53,12 +61,21 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
     if (event == null) return;
     final isDemo = ref.read(demoModeProvider);
 
-    if (isDemo) {
-      final nfcAvailable = await NfcService().isAvailable;
-      if (!nfcAvailable) {
+    final status = await NfcService().checkAvailability();
+    if (!mounted) return;
+    setState(() => _nfcStatus = status);
+
+    if (status != NfcAvailability.enabled) {
+      if (isDemo) {
         _showDemoParticipantPicker();
         return;
       }
+      setState(() {
+        _error = status == NfcAvailability.disabled
+            ? 'NFC ist ausgeschaltet'
+            : 'Dieses Gerät unterstützt kein NFC';
+      });
+      return;
     }
 
     setState(() {
@@ -250,6 +267,17 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
                     ),
                   ],
                 ),
+              ),
+            ],
+            if (_nfcStatus == NfcAvailability.disabled) ...[
+              const SizedBox(height: 12),
+              TextButton.icon(
+                onPressed: () async {
+                  await NfcService().openNfcSettings();
+                  await _refreshNfcStatus();
+                },
+                icon: const Icon(Icons.settings, size: 20),
+                label: const Text('NFC in den Einstellungen aktivieren'),
               ),
             ],
             const SizedBox(height: 32),

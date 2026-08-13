@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:flutter/services.dart';
 import 'package:nfc_manager/nfc_manager.dart';
 import 'package:nfc_manager/platform_tags.dart';
 import 'package:crypto/crypto.dart';
@@ -36,12 +37,49 @@ class NfcTagData {
       );
 }
 
+/// Zustand des NFC-Adapters.
+///
+/// NFC ist auf Android eine Install-Time-Permission — es gibt keinen
+/// Laufzeit-Dialog. Statt dessen muss unterschieden werden, ob das Gerät
+/// gar kein NFC hat oder ob der Nutzer es nur ausgeschaltet hat.
+enum NfcAvailability { enabled, disabled, unavailable }
+
 class NfcService {
   static final NfcService _instance = NfcService._();
   factory NfcService() => _instance;
   NfcService._();
 
+  static const _platform = MethodChannel('app.questband/nfc');
+
   Future<bool> get isAvailable => NfcManager.instance.isAvailable();
+
+  Future<NfcAvailability> checkAvailability() async {
+    try {
+      final status = await _platform.invokeMethod<String>('nfcStatus');
+      switch (status) {
+        case 'enabled':
+          return NfcAvailability.enabled;
+        case 'disabled':
+          return NfcAvailability.disabled;
+        default:
+          return NfcAvailability.unavailable;
+      }
+    } on PlatformException {
+      return await isAvailable
+          ? NfcAvailability.enabled
+          : NfcAvailability.unavailable;
+    } on MissingPluginException {
+      return await isAvailable
+          ? NfcAvailability.enabled
+          : NfcAvailability.unavailable;
+    }
+  }
+
+  Future<void> openNfcSettings() async {
+    try {
+      await _platform.invokeMethod('openNfcSettings');
+    } catch (_) {}
+  }
 
   String _extractUid(NfcTag tag) {
     final nfca = NfcA.from(tag);
