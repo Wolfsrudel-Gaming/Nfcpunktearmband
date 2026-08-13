@@ -8,6 +8,9 @@ on:
       - '.github/workflows/build-apk.yml'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Build Android APK
@@ -42,3 +45,14 @@ jobs:
           name: questband-apk
           path: app/build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: QuestBand APK Build #${{ github.run_number }}
+          body: |
+            Automatischer Build von Branch `${{ github.ref_name }}`
+            Commit: ${{ github.sha }}
+          files: app/build/app/outputs/flutter-apk/app-release.apk
+          prerelease: true
