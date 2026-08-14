@@ -61,6 +61,8 @@ class ElternOverviewScreen extends StatelessWidget {
   Widget _buildChildCard(BuildContext context, Participant child) {
     final p = DemoService().getParticipant(child.id) ?? child;
     final txs = DemoService().getTransactions(p.id);
+    final leaderboard = DemoService().getLeaderboard(p.eventId);
+    final rank = leaderboard.indexWhere((x) => x.id == p.id) + 1;
     final earned = txs.where((t) => t.amount > 0).fold<int>(0, (s, t) => s + t.amount);
     final redeemed = txs.where((t) => t.reason == 'redemption').length;
     final lastTx = txs.isNotEmpty ? txs.first : null;
@@ -133,13 +135,9 @@ class ElternOverviewScreen extends StatelessWidget {
                 _miniStat(context, Icons.card_giftcard, '$redeemed',
                     'Eingelöst', AppTheme.brand),
                 const SizedBox(width: 16),
-                _miniStat(
-                  context,
-                  p.nfcTagUid != null ? Icons.nfc : Icons.nfc_outlined,
-                  p.nfcTagUid != null ? 'Ja' : 'Nein',
-                  'Armband',
-                  p.nfcTagUid != null ? AppTheme.success : Colors.grey,
-                ),
+                _miniStat(context, Icons.emoji_events,
+                    rank > 0 ? 'Platz $rank' : '—', 'Rangliste',
+                    AppTheme.violet),
               ],
             ),
             if (lastTx != null) ...[

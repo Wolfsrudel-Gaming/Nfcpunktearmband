@@ -14,14 +14,16 @@ class TnDashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = DemoService().getParticipant(participant.id) ?? participant;
     final transactions = DemoService().getTransactions(p.id);
-    final recent = transactions.take(5).toList();
+    final leaderboard = DemoService().getLeaderboard(p.eventId);
+    final rank = leaderboard.indexWhere((x) => x.id == p.id) + 1;
+    final recent = transactions.take(10).toList();
 
     return RefreshIndicator(
       onRefresh: () async {},
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _buildPointsCard(context, p)
+          _buildPointsCard(context, p, rank, leaderboard.length)
               .animate()
               .fadeIn(duration: 500.ms)
               .slideY(begin: 0.15, end: 0, duration: 500.ms),
@@ -31,11 +33,23 @@ class TnDashboardScreen extends StatelessWidget {
               .fadeIn(duration: 400.ms, delay: 200.ms)
               .slideY(begin: 0.1, end: 0, duration: 400.ms, delay: 200.ms),
           const SizedBox(height: 20),
-          Text(
-            'Letzte Aktivitäten',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+          Row(
+            children: [
+              Text(
+                'Letzte Aktivitäten',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const Spacer(),
+              Text(
+                '${transactions.length} gesamt',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
+              ),
+            ],
           ),
           const SizedBox(height: 8),
           if (recent.isEmpty)
@@ -53,7 +67,8 @@ class TnDashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPointsCard(BuildContext context, Participant p) {
+  Widget _buildPointsCard(
+      BuildContext context, Participant p, int rank, int total) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -84,20 +99,53 @@ class TnDashboardScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.white.withAlpha(40),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              p.group ?? p.displayName,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withAlpha(40),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  p.group ?? p.displayName,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ),
-            ),
+              if (rank > 0) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withAlpha(40),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.emoji_events,
+                          color: Colors.white, size: 14),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Platz $rank/$total',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
           ),
         ],
       ),
@@ -106,8 +154,11 @@ class TnDashboardScreen extends StatelessWidget {
 
   Widget _buildStatsRow(
       BuildContext context, Participant p, List<PointTransaction> txs) {
-    final earned = txs.where((t) => t.amount > 0).fold<int>(0, (s, t) => s + t.amount);
-    final spent = txs.where((t) => t.amount < 0).fold<int>(0, (s, t) => s + t.amount.abs());
+    final earned =
+        txs.where((t) => t.amount > 0).fold<int>(0, (s, t) => s + t.amount);
+    final spent = txs
+        .where((t) => t.amount < 0)
+        .fold<int>(0, (s, t) => s + t.amount.abs());
     return Row(
       children: [
         _statCard(context, 'Verdient', '+$earned', AppTheme.success),
@@ -119,7 +170,8 @@ class TnDashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _statCard(BuildContext context, String label, String value, Color color) {
+  Widget _statCard(
+      BuildContext context, String label, String value, Color color) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(12),
@@ -147,11 +199,17 @@ class TnDashboardScreen extends StatelessWidget {
 
   Widget _txTile(BuildContext context, PointTransaction tx) {
     final pos = tx.amount >= 0;
+    final dt = DateTime.tryParse(tx.createdAt);
+    final time = dt != null
+        ? '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}'
+        : '';
+
     return ListTile(
       dense: true,
       leading: CircleAvatar(
         radius: 18,
-        backgroundColor: (pos ? AppTheme.success : AppTheme.danger).withAlpha(25),
+        backgroundColor:
+            (pos ? AppTheme.success : AppTheme.danger).withAlpha(25),
         child: Icon(
           pos ? Icons.arrow_upward : Icons.arrow_downward,
           size: 18,
@@ -165,7 +223,15 @@ class TnDashboardScreen extends StatelessWidget {
           color: pos ? AppTheme.success : AppTheme.danger,
         ),
       ),
-      subtitle: Text(tx.note ?? tx.reason, style: const TextStyle(fontSize: 12)),
+      subtitle:
+          Text(tx.note ?? tx.reason, style: const TextStyle(fontSize: 12)),
+      trailing: Text(
+        time,
+        style: TextStyle(
+          fontSize: 11,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+      ),
     );
   }
 }
