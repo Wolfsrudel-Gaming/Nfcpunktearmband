@@ -21,6 +21,9 @@ const envSchema = z.object({
   MINIO_SECRET_KEY: z.string().default('minioadmin'),
   MINIO_BUCKET: z.string().default('questband'),
 
+  CORS_ORIGIN: z.string().default('*'),
+  API_PREFIX: z.string().default(''),
+
   LOG_LEVEL: z.enum(['error', 'warn', 'info', 'debug']).default('info'),
 });
 

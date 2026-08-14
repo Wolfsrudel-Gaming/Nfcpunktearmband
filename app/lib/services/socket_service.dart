@@ -16,11 +16,20 @@ class SocketService {
     final token = ApiClient().token;
     if (token == null) return;
 
+    final baseUrl = ApiClient().baseUrl;
+    final uri = Uri.parse(baseUrl);
+    final socketUrl =
+        '${uri.scheme}://${uri.host}${uri.hasPort ? ':${uri.port}' : ''}';
+    final socketPath = uri.path.isEmpty || uri.path == '/'
+        ? '/socket.io'
+        : '${uri.path}/socket.io';
+
     _socket?.disconnect();
     _socket = io.io(
-      AppConstants.apiBaseUrl,
+      socketUrl,
       io.OptionBuilder()
           .setTransports(['websocket'])
+          .setPath(socketPath)
           .setAuth({'token': token})
           .enableReconnection()
           .setReconnectionDelay(

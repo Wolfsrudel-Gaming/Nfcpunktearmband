@@ -59,6 +59,8 @@ services:
       MINIO_PORT: 9000
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
+      CORS_ORIGIN: "*"
+      API_PREFIX: ""
       LOG_LEVEL: debug
     depends_on:
       postgres:

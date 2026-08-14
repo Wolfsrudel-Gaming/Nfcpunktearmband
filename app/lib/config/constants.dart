@@ -2,7 +2,7 @@ class AppConstants {
   AppConstants._();
 
   static const String appName = 'QuestBand';
-  static const String apiBaseUrl = 'http://10.0.2.2:3000';
+  static const String apiBaseUrl = 'https://riegel-troisdorf.de/QuestBand';
   static const Duration apiTimeout = Duration(seconds: 15);
   static const Duration socketReconnectDelay = Duration(seconds: 3);
   static const int maxOfflineQueueSize = 500;

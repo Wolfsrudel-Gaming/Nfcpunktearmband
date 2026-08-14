@@ -18,8 +18,12 @@ async function bootstrap() {
 
   const server = createServer(app);
 
+  const corsOrigin = env.CORS_ORIGIN === '*' ? true : env.CORS_ORIGIN.split(',');
+  const socketPath = env.API_PREFIX ? `${env.API_PREFIX}/socket.io` : '/socket.io';
+
   const io = new SocketServer(server, {
-    cors: { origin: '*', methods: ['GET', 'POST'] },
+    cors: { origin: corsOrigin, methods: ['GET', 'POST'], credentials: true },
+    path: socketPath,
   });
   setupSocketHandlers(io);
 
