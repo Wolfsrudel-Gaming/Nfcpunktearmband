@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- NFC icon centered in safe zone (24dp icon scaled up, offset to center in 108dp) -->
+    <group
+        android:translateX="30"
+        android:translateY="30">
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M24,0L24,0C37.25,0 48,10.75 48,24L48,24C48,37.25 37.25,48 24,48L24,48C10.75,48 0,37.25 0,24L0,24C0,10.75 10.75,0 24,0Z"/>
+        <path
+            android:fillColor="#FF6B35"
+            android:pathData="M24,14c-5.5,0 -10,4.5 -10,10s4.5,10 10,10 10,-4.5 10,-10 -4.5,-10 -10,-10zM24,32c-4.4,0 -8,-3.6 -8,-8s3.6,-8 8,-8 8,3.6 8,8 -3.6,8 -8,8zM24,20c-2.2,0 -4,1.8 -4,4s1.8,4 4,4 4,-1.8 4,-4 -1.8,-4 -4,-4zM20,12l0,-2c0,-0.55 0.45,-1 1,-1l6,0c0.55,0 1,0.45 1,1l0,2M20,38l0,2c0,0.55 0.45,1 1,1l6,0c0.55,0 1,-0.45 1,-1l0,-2"/>
+    </group>
+</vector>

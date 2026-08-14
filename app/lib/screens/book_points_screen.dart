@@ -31,6 +31,8 @@ class _BookPointsScreenState extends ConsumerState<BookPointsScreen> {
   String _reason = 'manual';
   final _noteController = TextEditingController();
   bool _loading = false;
+  bool _showSuccess = false;
+  int? _resultBalance;
 
   @override
   void dispose() {
@@ -92,15 +94,15 @@ class _BookPointsScreenState extends ConsumerState<BookPointsScreen> {
       }
 
       if (!mounted) return;
-      HapticFeedback.mediumImpact();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '${amount > 0 ? '+' : ''}$amount Punkte gebucht. Stand: $balance',
-          ),
-          backgroundColor: AppTheme.success,
-        ),
-      );
+      HapticFeedback.heavyImpact();
+      setState(() {
+        _showSuccess = true;
+        _resultBalance = balance;
+        _loading = false;
+      });
+
+      await Future.delayed(const Duration(milliseconds: 1200));
+      if (!mounted) return;
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
@@ -110,13 +112,48 @@ class _BookPointsScreenState extends ConsumerState<BookPointsScreen> {
           backgroundColor: AppTheme.danger,
         ),
       );
-    } finally {
-      if (mounted) setState(() => _loading = false);
+      setState(() => _loading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_showSuccess) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.check_circle, size: 80, color: AppTheme.success)
+                  .animate()
+                  .scale(
+                      begin: const Offset(0.3, 0.3),
+                      end: const Offset(1, 1),
+                      duration: 400.ms,
+                      curve: Curves.elasticOut),
+              const SizedBox(height: 16),
+              Text(
+                '${_amount! > 0 ? '+' : ''}${_amount!} Punkte',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: _amount! > 0 ? AppTheme.success : AppTheme.danger,
+                ),
+              ).animate().fadeIn(duration: 300.ms, delay: 200.ms),
+              const SizedBox(height: 8),
+              Text(
+                'Neuer Stand: $_resultBalance P',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ).animate().fadeIn(duration: 300.ms, delay: 350.ms),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(title: const Text('Punkte buchen')),
       body: ListView(
@@ -164,7 +201,7 @@ class _BookPointsScreenState extends ConsumerState<BookPointsScreen> {
           ),
           const SizedBox(height: 24),
           Text(
-            'Schnellwahl',
+            'Punkte vergeben',
             style: Theme.of(context)
                 .textTheme
                 .titleSmall
@@ -175,7 +212,23 @@ class _BookPointsScreenState extends ConsumerState<BookPointsScreen> {
             spacing: 8,
             runSpacing: 8,
             children: AppConstants.quickSelectValues
-                .map((v) => _quickButton(v))
+                .map((v) => _quickButton(v, positive: true))
+                .toList(),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Punkte abziehen',
+            style: Theme.of(context)
+                .textTheme
+                .titleSmall
+                ?.copyWith(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: AppConstants.quickSelectValues
+                .map((v) => _quickButton(-v, positive: false))
                 .toList(),
           ),
           const SizedBox(height: 20),
@@ -219,6 +272,8 @@ class _BookPointsScreenState extends ConsumerState<BookPointsScreen> {
                   value: 'quick_select', child: Text('Schnellwahl')),
               DropdownMenuItem(value: 'quest', child: Text('Quest')),
               DropdownMenuItem(value: 'badge', child: Text('Badge')),
+              DropdownMenuItem(value: 'penalty', child: Text('Strafe')),
+              DropdownMenuItem(value: 'correction', child: Text('Korrektur')),
             ],
             onChanged: (v) => setState(() => _reason = v!),
           ),
@@ -235,6 +290,11 @@ class _BookPointsScreenState extends ConsumerState<BookPointsScreen> {
             height: 52,
             child: ElevatedButton(
               onPressed: _loading || _amount == null ? null : _book,
+              style: _amount != null && _amount! < 0
+                  ? ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.danger,
+                    )
+                  : null,
               child: _loading
                   ? const SizedBox(
                       height: 20,
@@ -250,14 +310,15 @@ class _BookPointsScreenState extends ConsumerState<BookPointsScreen> {
                           : 'Punkte buchen',
                     ),
             ),
-          ).animate().fadeIn(duration: 300.ms, delay: 200.ms),
+          ),
         ],
       ),
     );
   }
 
-  Widget _quickButton(int value) {
+  Widget _quickButton(int value, {required bool positive}) {
     final selected = _selectedAmount == value;
+    final color = positive ? AppTheme.brand : AppTheme.danger;
     return SizedBox(
       width: 72,
       height: 52,
@@ -266,15 +327,14 @@ class _BookPointsScreenState extends ConsumerState<BookPointsScreen> {
           setState(() {
             _selectedAmount = value;
             _customController.clear();
-            _reason = 'quick_select';
+            _reason = positive ? 'quick_select' : 'penalty';
           });
           HapticFeedback.selectionClick();
         },
         style: OutlinedButton.styleFrom(
-          backgroundColor:
-              selected ? AppTheme.brand.withAlpha(25) : null,
+          backgroundColor: selected ? color.withAlpha(25) : null,
           side: BorderSide(
-            color: selected ? AppTheme.brand : Colors.grey.shade300,
+            color: selected ? color : Colors.grey.shade300,
             width: selected ? 2 : 1,
           ),
           shape: RoundedRectangleBorder(
@@ -282,11 +342,11 @@ class _BookPointsScreenState extends ConsumerState<BookPointsScreen> {
           ),
         ),
         child: Text(
-          '+$value',
+          '${positive ? '+' : ''}$value',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: selected ? AppTheme.brand : null,
+            color: selected ? color : null,
           ),
         ),
       ),

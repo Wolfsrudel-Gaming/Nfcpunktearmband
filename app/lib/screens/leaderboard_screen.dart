@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../config/theme.dart';
 import '../providers/event_provider.dart';
 import '../providers/participant_provider.dart';
@@ -24,19 +25,27 @@ class LeaderboardScreen extends ConsumerWidget {
             child: Text('Keine Daten', style: TextStyle(color: Colors.grey)),
           );
         }
-        return ListView.builder(
-          padding: const EdgeInsets.all(12),
-          itemCount: participants.length + 1,
-          itemBuilder: (context, index) {
-            if (index == 0) {
-              return _buildPodium(context, participants);
-            }
-            final rank = index;
-            if (rank > participants.length) return const SizedBox.shrink();
-            final p = participants[rank - 1];
-            if (rank <= 3) return const SizedBox.shrink();
-            return _buildRow(context, rank, p);
+        return RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(leaderboardProvider(event.id));
           },
+          child: ListView.builder(
+            padding: const EdgeInsets.all(12),
+            itemCount: participants.length + 1,
+            itemBuilder: (context, index) {
+              if (index == 0) {
+                return _buildPodium(context, participants)
+                    .animate()
+                    .fadeIn(duration: 500.ms)
+                    .slideY(begin: 0.1, end: 0, duration: 500.ms);
+              }
+              final rank = index;
+              if (rank > participants.length) return const SizedBox.shrink();
+              final p = participants[rank - 1];
+              if (rank <= 3) return const SizedBox.shrink();
+              return _buildRow(context, rank, p);
+            },
+          ),
         );
       },
     );
@@ -60,7 +69,7 @@ class LeaderboardScreen extends ConsumerWidget {
 
   Widget _podiumItem(BuildContext context, dynamic p, int rank, double height) {
     final colors = [AppTheme.brand, Colors.grey.shade400, Colors.brown.shade300];
-    final icons = ['🥇', '🥈', '🥉'];
+    final icons = ['\u{1F947}', '\u{1F948}', '\u{1F949}'];
     final color = colors[rank - 1];
 
     return Expanded(
