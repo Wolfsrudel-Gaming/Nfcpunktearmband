@@ -5,6 +5,7 @@ import 'admin_dashboard_screen.dart';
 import 'admin_participants_screen.dart';
 import 'admin_rewards_screen.dart';
 import 'admin_event_config_screen.dart';
+import 'admin_activity_screen.dart';
 
 class AdminHomeScreen extends ConsumerStatefulWidget {
   const AdminHomeScreen({super.key});
@@ -26,6 +27,7 @@ class _AdminHomeScreenState extends ConsumerState<AdminHomeScreen> {
     final screens = [
       AdminDashboardScreen(eventId: event.id),
       AdminParticipantsScreen(eventId: event.id),
+      AdminActivityScreen(eventId: event.id),
       AdminRewardsScreen(eventId: event.id),
       AdminEventConfigScreen(eventId: event.id),
     ];
@@ -46,6 +48,11 @@ class _AdminHomeScreenState extends ConsumerState<AdminHomeScreen> {
               icon: Icon(Icons.people_outline),
               selectedIcon: Icon(Icons.people),
               label: 'Teilnehmer',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.timeline_outlined),
+              selectedIcon: Icon(Icons.timeline),
+              label: 'Aktivität',
             ),
             NavigationDestination(
               icon: Icon(Icons.card_giftcard_outlined),

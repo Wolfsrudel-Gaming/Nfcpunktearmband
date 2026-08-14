@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../config/theme.dart';
 import '../../models/participant.dart';
 import '../../services/demo_service.dart';
+import 'admin_participant_detail_screen.dart';
 
 class AdminParticipantsScreen extends StatefulWidget {
   final String eventId;
@@ -80,6 +81,17 @@ class _AdminParticipantsScreenState extends State<AdminParticipantsScreen> {
               return Card(
                 margin: const EdgeInsets.symmetric(vertical: 3),
                 child: ListTile(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => AdminParticipantDetailScreen(
+                          participant: p,
+                          eventId: widget.eventId,
+                        ),
+                      ),
+                    ).then((_) => setState(() {}));
+                  },
                   leading: CircleAvatar(
                     backgroundColor: AppTheme.violet.withAlpha(30),
                     child: Text(
@@ -111,11 +123,9 @@ class _AdminParticipantsScreenState extends State<AdminParticipantsScreen> {
                       ],
                     ],
                   ),
-                  trailing: Text(
-                    '${p.age ?? "?"} J.',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+                  trailing: Icon(
+                    Icons.chevron_right,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               );

@@ -6,11 +6,18 @@ import '../providers/event_provider.dart';
 import '../providers/participant_provider.dart';
 import '../widgets/shimmer_loading.dart';
 
-class LeaderboardScreen extends ConsumerWidget {
+class LeaderboardScreen extends ConsumerStatefulWidget {
   const LeaderboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<LeaderboardScreen> createState() => _LeaderboardScreenState();
+}
+
+class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
+  String? _selectedGroup;
+
+  @override
+  Widget build(BuildContext context) {
     final event = ref.watch(selectedEventProvider);
     if (event == null) return const SizedBox.shrink();
 
@@ -25,29 +32,75 @@ class LeaderboardScreen extends ConsumerWidget {
             child: Text('Keine Daten', style: TextStyle(color: Colors.grey)),
           );
         }
+
+        final groups = participants
+            .where((p) => p.group != null)
+            .map((p) => p.group!)
+            .toSet()
+            .toList()
+          ..sort();
+
+        final filtered = _selectedGroup == null
+            ? participants
+            : participants.where((p) => p.group == _selectedGroup).toList();
+
         return RefreshIndicator(
           onRefresh: () async {
             ref.invalidate(leaderboardProvider(event.id));
           },
           child: ListView.builder(
             padding: const EdgeInsets.all(12),
-            itemCount: participants.length + 1,
+            itemCount: filtered.length + 2,
             itemBuilder: (context, index) {
               if (index == 0) {
-                return _buildPodium(context, participants)
+                return _buildGroupFilter(context, groups);
+              }
+              if (index == 1) {
+                return _buildPodium(context, filtered)
                     .animate()
                     .fadeIn(duration: 500.ms)
                     .slideY(begin: 0.1, end: 0, duration: 500.ms);
               }
-              final rank = index;
-              if (rank > participants.length) return const SizedBox.shrink();
-              final p = participants[rank - 1];
+              final rank = index - 1;
+              if (rank > filtered.length) return const SizedBox.shrink();
+              final p = filtered[rank - 1];
               if (rank <= 3) return const SizedBox.shrink();
               return _buildRow(context, rank, p);
             },
           ),
         );
       },
+    );
+  }
+
+  Widget _buildGroupFilter(BuildContext context, List<String> groups) {
+    if (groups.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: SizedBox(
+        height: 36,
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          children: [
+            _filterChip(context, 'Alle', null),
+            ...groups.map((g) => _filterChip(context, g, g)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _filterChip(BuildContext context, String label, String? group) {
+    final selected = _selectedGroup == group;
+    return Padding(
+      padding: const EdgeInsets.only(right: 6),
+      child: FilterChip(
+        label: Text(label, style: TextStyle(fontSize: 12, color: selected ? Colors.white : null)),
+        selected: selected,
+        selectedColor: AppTheme.violet,
+        checkmarkColor: Colors.white,
+        onSelected: (_) => setState(() => _selectedGroup = group),
+      ),
     );
   }
 
