@@ -15,6 +15,7 @@ class LeaderboardScreen extends ConsumerStatefulWidget {
 
 class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
   String? _selectedGroup;
+  bool _showGroupView = false;
 
   @override
   Widget build(BuildContext context) {
@@ -40,36 +41,172 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
             .toList()
           ..sort();
 
-        final filtered = _selectedGroup == null
-            ? participants
-            : participants.where((p) => p.group == _selectedGroup).toList();
-
         return RefreshIndicator(
           onRefresh: () async {
             ref.invalidate(leaderboardProvider(event.id));
           },
-          child: ListView.builder(
-            padding: const EdgeInsets.all(12),
-            itemCount: filtered.length + 2,
-            itemBuilder: (context, index) {
-              if (index == 0) {
-                return _buildGroupFilter(context, groups);
-              }
-              if (index == 1) {
-                return _buildPodium(context, filtered)
-                    .animate()
-                    .fadeIn(duration: 500.ms)
-                    .slideY(begin: 0.1, end: 0, duration: 500.ms);
-              }
-              final rank = index - 1;
-              if (rank > filtered.length) return const SizedBox.shrink();
-              final p = filtered[rank - 1];
-              if (rank <= 3) return const SizedBox.shrink();
-              return _buildRow(context, rank, p);
-            },
-          ),
+          child: _showGroupView
+              ? _buildGroupLeaderboard(context, participants, groups)
+              : _buildIndividualLeaderboard(context, participants, groups),
         );
       },
+    );
+  }
+
+  Widget _buildViewToggle(BuildContext context, List<String> groups) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          if (groups.length > 1) ...[
+            SizedBox(
+              height: 36,
+              child: SegmentedButton<bool>(
+                segments: const [
+                  ButtonSegment(value: false, icon: Icon(Icons.person, size: 16), label: Text('Einzeln', style: TextStyle(fontSize: 11))),
+                  ButtonSegment(value: true, icon: Icon(Icons.groups, size: 16), label: Text('Gruppen', style: TextStyle(fontSize: 11))),
+                ],
+                selected: {_showGroupView},
+                onSelectionChanged: (v) => setState(() {
+                  _showGroupView = v.first;
+                  _selectedGroup = null;
+                }),
+                style: ButtonStyle(
+                  visualDensity: VisualDensity.compact,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildIndividualLeaderboard(
+      BuildContext context, List participants, List<String> groups) {
+    final filtered = _selectedGroup == null
+        ? participants
+        : participants.where((p) => p.group == _selectedGroup).toList();
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(12),
+      itemCount: filtered.length + 3,
+      itemBuilder: (context, index) {
+        if (index == 0) return _buildViewToggle(context, groups);
+        if (index == 1) return _buildGroupFilter(context, groups);
+        if (index == 2) {
+          return _buildPodium(context, filtered)
+              .animate()
+              .fadeIn(duration: 500.ms)
+              .slideY(begin: 0.1, end: 0, duration: 500.ms);
+        }
+        final rank = index - 2;
+        if (rank > filtered.length) return const SizedBox.shrink();
+        final p = filtered[rank - 1];
+        if (rank <= 3) return const SizedBox.shrink();
+        return _buildRow(context, rank, p);
+      },
+    );
+  }
+
+  Widget _buildGroupLeaderboard(
+      BuildContext context, List participants, List<String> groups) {
+    final groupStats = <String, _GroupStats>{};
+    for (final p in participants) {
+      final g = p.group ?? 'Ohne Gruppe';
+      final stats = groupStats.putIfAbsent(g, () => _GroupStats(g));
+      stats.totalPoints += p.balance;
+      stats.memberCount++;
+    }
+    final sorted = groupStats.values.toList()
+      ..sort((a, b) => b.totalPoints.compareTo(a.totalPoints));
+
+    final maxPoints = sorted.isNotEmpty ? sorted.first.totalPoints : 1;
+
+    return ListView(
+      padding: const EdgeInsets.all(12),
+      children: [
+        _buildViewToggle(context, groups),
+        const SizedBox(height: 8),
+        ...sorted.asMap().entries.map((entry) {
+          final rank = entry.key + 1;
+          final stats = entry.value;
+          final barWidth = maxPoints > 0 ? stats.totalPoints / maxPoints : 0.0;
+          final colors = [AppTheme.brand, AppTheme.violet, AppTheme.success, Colors.grey];
+          final color = colors[(rank - 1) % colors.length];
+
+          return Card(
+            margin: const EdgeInsets.symmetric(vertical: 4),
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 20,
+                        backgroundColor: color.withAlpha(30),
+                        child: Text(
+                          '$rank',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: color,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              stats.name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            Text(
+                              '${stats.memberCount} Mitglieder · ${stats.avgPoints} P/Person',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Text(
+                        '${stats.totalPoints} P',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                          color: color,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: barWidth,
+                      minHeight: 8,
+                      backgroundColor: color.withAlpha(20),
+                      valueColor: AlwaysStoppedAnimation(color),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ).animate().fadeIn(
+                duration: 400.ms,
+                delay: Duration(milliseconds: 100 * rank),
+              );
+        }),
+      ],
     );
   }
 
@@ -210,4 +347,14 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
       ),
     );
   }
+}
+
+class _GroupStats {
+  final String name;
+  int totalPoints = 0;
+  int memberCount = 0;
+
+  _GroupStats(this.name);
+
+  int get avgPoints => memberCount > 0 ? totalPoints ~/ memberCount : 0;
 }
