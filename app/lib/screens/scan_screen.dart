@@ -8,6 +8,7 @@ import '../services/nfc_service.dart';
 import '../services/demo_service.dart';
 import '../models/participant.dart';
 import 'participant_profile_screen.dart';
+import 'qr_scan_screen.dart';
 
 class ScanScreen extends ConsumerStatefulWidget {
   const ScanScreen({super.key});
@@ -290,8 +291,27 @@ class _ScanScreenState extends ConsumerState<ScanScreen>
                 label: Text(_scanning ? 'Scanne...' : 'Scannen'),
               ),
             ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: 200,
+              height: 44,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const QrScanScreen()),
+                  );
+                },
+                icon: const Icon(Icons.qr_code_scanner, size: 20),
+                label: const Text('QR scannen'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppTheme.violet,
+                  side: BorderSide(color: AppTheme.violet.withAlpha(120)),
+                ),
+              ),
+            ),
             if (isDemo) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               SizedBox(
                 width: 200,
                 height: 44,
