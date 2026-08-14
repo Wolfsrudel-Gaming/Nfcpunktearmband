@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../config/theme.dart';
 import '../models/participant.dart';
 import '../models/point_transaction.dart';
@@ -85,16 +86,24 @@ class _ParticipantProfileScreenState
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            _buildProfileCard(),
+            _buildProfileCard()
+                .animate()
+                .fadeIn(duration: 400.ms)
+                .slideY(begin: 0.1, end: 0, duration: 400.ms),
             const SizedBox(height: 16),
-            _buildActionButtons(),
+            _buildActionButtons()
+                .animate()
+                .fadeIn(duration: 400.ms, delay: 150.ms)
+                .slideY(begin: 0.1, end: 0, duration: 400.ms, delay: 150.ms),
             const SizedBox(height: 24),
             Text(
               'Letzte Buchungen',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
-            ),
+            )
+                .animate()
+                .fadeIn(duration: 300.ms, delay: 300.ms),
             const SizedBox(height: 8),
             _buildHistory(),
           ],

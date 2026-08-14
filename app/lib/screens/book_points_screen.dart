@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../config/theme.dart';
 import '../config/constants.dart';
 import '../models/participant.dart';
 import '../services/api_client.dart';
 import '../services/demo_service.dart';
 import '../services/offline_queue.dart';
+import '../providers/connectivity_provider.dart';
 import '../providers/demo_provider.dart';
 
 class BookPointsScreen extends ConsumerStatefulWidget {
@@ -76,6 +78,7 @@ class _BookPointsScreenState extends ConsumerState<BookPointsScreen> {
           balance = result['balance'] as int;
         } catch (e) {
           await OfflineQueue().enqueue('POST', '/api/points', data: body);
+          ref.read(connectivityProvider.notifier).refreshPendingCount();
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -247,7 +250,7 @@ class _BookPointsScreenState extends ConsumerState<BookPointsScreen> {
                           : 'Punkte buchen',
                     ),
             ),
-          ),
+          ).animate().fadeIn(duration: 300.ms, delay: 200.ms),
         ],
       ),
     );

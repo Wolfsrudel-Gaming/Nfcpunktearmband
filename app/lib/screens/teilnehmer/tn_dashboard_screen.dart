@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../config/theme.dart';
 import '../../models/participant.dart';
 import '../../models/point_transaction.dart';
@@ -20,9 +21,15 @@ class TnDashboardScreen extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _buildPointsCard(context, p),
+          _buildPointsCard(context, p)
+              .animate()
+              .fadeIn(duration: 500.ms)
+              .slideY(begin: 0.15, end: 0, duration: 500.ms),
           const SizedBox(height: 16),
-          _buildStatsRow(context, p, transactions),
+          _buildStatsRow(context, p, transactions)
+              .animate()
+              .fadeIn(duration: 400.ms, delay: 200.ms)
+              .slideY(begin: 0.1, end: 0, duration: 400.ms, delay: 200.ms),
           const SizedBox(height: 20),
           Text(
             'Letzte Aktivitäten',

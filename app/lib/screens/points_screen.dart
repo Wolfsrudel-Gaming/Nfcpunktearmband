@@ -4,43 +4,85 @@ import '../config/theme.dart';
 import '../providers/event_provider.dart';
 import '../providers/participant_provider.dart';
 import '../models/participant.dart';
+import '../widgets/shimmer_loading.dart';
 import 'book_points_screen.dart';
 
-class PointsScreen extends ConsumerWidget {
+class PointsScreen extends ConsumerStatefulWidget {
   const PointsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PointsScreen> createState() => _PointsScreenState();
+}
+
+class _PointsScreenState extends ConsumerState<PointsScreen> {
+  String _search = '';
+
+  @override
+  Widget build(BuildContext context) {
     final event = ref.watch(selectedEventProvider);
     if (event == null) return const SizedBox.shrink();
 
     final participantsAsync = ref.watch(participantsProvider(event.id));
 
     return participantsAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const ShimmerList(),
       error: (e, _) => Center(child: Text('Fehler: $e')),
       data: (participants) {
-        final sorted = [...participants]
+        var sorted = [...participants]
           ..sort((a, b) => a.displayName.compareTo(b.displayName));
-        return ListView.builder(
-          padding: const EdgeInsets.all(12),
-          itemCount: sorted.length + 1,
-          itemBuilder: (context, index) {
-            if (index == 0) {
-              return Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                child: Text(
-                  'Teilnehmer wählen',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+        if (_search.isNotEmpty) {
+          final lower = _search.toLowerCase();
+          sorted = sorted
+              .where((p) =>
+                  p.displayName.toLowerCase().contains(lower) ||
+                  (p.group?.toLowerCase().contains(lower) ?? false))
+              .toList();
+        }
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Teilnehmer suchen...',
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: _search.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, size: 20),
+                          onPressed: () => setState(() => _search = ''),
+                        )
+                      : null,
+                  isDense: true,
                 ),
-              );
-            }
-            final p = sorted[index - 1];
-            return _ParticipantTile(participant: p, eventId: event.id);
-          },
+                onChanged: (v) => setState(() => _search = v),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  '${sorted.length} Teilnehmer',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                itemCount: sorted.length,
+                itemBuilder: (context, index) {
+                  return _ParticipantTile(
+                    participant: sorted[index],
+                    eventId: event.id,
+                  );
+                },
+              ),
+            ),
+          ],
         );
       },
     );

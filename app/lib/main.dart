@@ -3,11 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'config/theme.dart';
 import 'config/constants.dart';
 import 'providers/auth_provider.dart';
+import 'services/offline_queue.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await OfflineQueue().init();
   runApp(const ProviderScope(child: QuestBandApp()));
 }
 

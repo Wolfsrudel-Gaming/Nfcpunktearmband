@@ -9,6 +9,7 @@ import '../providers/participant_provider.dart';
 import '../providers/demo_provider.dart';
 import '../services/api_client.dart';
 import '../services/demo_service.dart';
+import '../widgets/shimmer_loading.dart';
 
 final _rewardsProvider = FutureProvider.family<List<Reward>, String>(
   (ref, eventId) async {
@@ -34,7 +35,7 @@ class RewardsScreen extends ConsumerWidget {
     final rewardsAsync = ref.watch(_rewardsProvider(event.id));
 
     return rewardsAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const ShimmerList(itemCount: 5, itemHeight: 120),
       error: (e, _) => Center(child: Text('Fehler: $e')),
       data: (rewards) {
         if (rewards.isEmpty) {

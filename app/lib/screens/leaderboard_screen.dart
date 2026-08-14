@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../config/theme.dart';
 import '../providers/event_provider.dart';
 import '../providers/participant_provider.dart';
+import '../widgets/shimmer_loading.dart';
 
 class LeaderboardScreen extends ConsumerWidget {
   const LeaderboardScreen({super.key});
@@ -15,7 +16,7 @@ class LeaderboardScreen extends ConsumerWidget {
     final leaderboardAsync = ref.watch(leaderboardProvider(event.id));
 
     return leaderboardAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const ShimmerList(itemCount: 8),
       error: (e, _) => Center(child: Text('Fehler: $e')),
       data: (participants) {
         if (participants.isEmpty) {

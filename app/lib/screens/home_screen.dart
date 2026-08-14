@@ -5,12 +5,14 @@ import '../providers/auth_provider.dart';
 import '../providers/event_provider.dart';
 import '../providers/demo_provider.dart';
 import '../providers/participant_provider.dart';
+import '../providers/connectivity_provider.dart';
 import '../services/demo_service.dart';
 import '../widgets/role_switcher.dart';
 import 'scan_screen.dart';
 import 'points_screen.dart';
 import 'rewards_screen.dart';
 import 'leaderboard_screen.dart';
+import 'settings_screen.dart';
 import 'teilnehmer/tn_home_screen.dart';
 import 'eltern/eltern_home_screen.dart';
 import 'admin/admin_home_screen.dart';
@@ -55,6 +57,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final demoRole = ref.watch(demoRoleProvider);
     final selectedEvent = ref.watch(selectedEventProvider);
     final events = ref.watch(eventsProvider);
+    final connectivity = ref.watch(connectivityProvider);
 
     if (isDemo && selectedEvent == null) {
       events.whenData((list) {
@@ -86,6 +89,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ),
         actions: [
+          if (!isDemo && !connectivity.isOnline)
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: Icon(Icons.cloud_off,
+                  size: 20, color: AppTheme.danger),
+            ),
+          if (!isDemo && connectivity.pendingActions > 0)
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: Badge(
+                label: Text('${connectivity.pendingActions}'),
+                backgroundColor: AppTheme.warning,
+                child: const Icon(Icons.sync, size: 20),
+              ),
+            ),
           if (isDemo)
             IconButton(
               icon: const Icon(Icons.restart_alt),
@@ -103,6 +121,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               },
               tooltip: 'Demo zurücksetzen',
             ),
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
+              );
+            },
+            tooltip: 'Einstellungen',
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {

@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/participant.dart';
 import '../services/api_client.dart';
 import '../services/demo_service.dart';
+import '../services/socket_service.dart';
 import 'demo_provider.dart';
 
 final scannedParticipantProvider = StateProvider<Participant?>((ref) => null);
@@ -31,3 +32,16 @@ final leaderboardProvider = FutureProvider.family<List<Participant>, String>(
         .toList();
   },
 );
+
+final socketListenerProvider = Provider<void>((ref) {
+  void onUpdate(Map<String, dynamic> data) {
+    final eventId = data['eventId'] as String?;
+    if (eventId != null) {
+      ref.invalidate(participantsProvider(eventId));
+      ref.invalidate(leaderboardProvider(eventId));
+    }
+  }
+
+  SocketService().onPointsUpdate(onUpdate);
+  ref.onDispose(() => SocketService().removePointsListener(onUpdate));
+});

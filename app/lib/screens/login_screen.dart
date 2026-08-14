@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../config/theme.dart';
 import '../config/constants.dart';
 import '../providers/auth_provider.dart';
@@ -68,21 +69,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.nfc_rounded, size: 72, color: AppTheme.brand),
+                Icon(Icons.nfc_rounded, size: 72, color: AppTheme.brand)
+                    .animate()
+                    .fadeIn(duration: 600.ms)
+                    .scale(begin: const Offset(0.5, 0.5), end: const Offset(1, 1), duration: 600.ms),
                 const SizedBox(height: 12),
                 Text(
                   AppConstants.appName,
                   style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
-                ),
+                ).animate().fadeIn(duration: 500.ms, delay: 200.ms),
                 const SizedBox(height: 8),
                 Text(
                   'Betreuer-Login',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
-                ),
+                ).animate().fadeIn(duration: 500.ms, delay: 300.ms),
                 const SizedBox(height: 40),
                 if (_error != null)
                   Container(
