@@ -3,6 +3,7 @@ import { PointTransaction } from '../entities/PointTransaction.js';
 import { Participant } from '../entities/Participant.js';
 import { AppError } from '../middleware/error.js';
 import { PointReason } from '../types/index.js';
+import { emitPointsUpdate } from './socket.service.js';
 import crypto from 'crypto';
 
 const txRepo = () => AppDataSource.getRepository(PointTransaction);
@@ -48,6 +49,8 @@ export async function bookPoints(data: {
 
     participant.balance = newBalance;
     await manager.save(Participant, participant);
+
+    emitPointsUpdate(data.eventId, data.participantId, newBalance);
 
     return { transaction: savedTx, balance: newBalance };
   });

@@ -82,6 +82,8 @@ export async function login(data: {
 
   const payload: JwtPayload = {
     userId: user.id,
+    name: user.name,
+    email: user.email ?? undefined,
     role: user.role,
     eventId: data.eventId,
     deviceId: data.deviceFingerprint,

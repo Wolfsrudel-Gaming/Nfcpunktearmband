@@ -20,10 +20,14 @@ export enum PointReason {
   QUEST = 'quest',
   BADGE = 'badge',
   REDEMPTION = 'redemption',
+  PENALTY = 'penalty',
+  CORRECTION = 'correction',
 }
 
 export interface JwtPayload {
   userId: string;
+  name: string;
+  email?: string;
   role: UserRole;
   eventId?: string;
   deviceId?: string;

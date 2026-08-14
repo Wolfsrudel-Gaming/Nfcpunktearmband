@@ -52,6 +52,7 @@ export async function listEvents(filters?: { status?: EventStatus; createdBy?: s
   const qb = repo().createQueryBuilder('event');
   if (filters?.status) qb.andWhere('event.status = :status', { status: filters.status });
   if (filters?.createdBy) qb.andWhere('event.createdBy = :createdBy', { createdBy: filters.createdBy });
+  qb.loadRelationCountAndMap('event.participantCount', 'event.participants');
   qb.orderBy('event.createdAt', 'DESC');
   return qb.getMany();
 }

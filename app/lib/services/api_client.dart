@@ -35,6 +35,12 @@ class ApiClient {
     ));
   }
 
+  void updateBaseUrl(String url) {
+    _dio.options.baseUrl = url;
+  }
+
+  String get baseUrl => _dio.options.baseUrl;
+
   Future<void> init() async {
     _token = await _storage.read(key: 'jwt_token');
   }
