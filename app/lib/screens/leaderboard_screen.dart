@@ -115,7 +115,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
     for (final p in participants) {
       final g = p.group ?? 'Ohne Gruppe';
       final stats = groupStats.putIfAbsent(g, () => _GroupStats(g));
-      stats.totalPoints += p.balance;
+      stats.totalPoints += (p.balance as int);
       stats.memberCount++;
     }
     final sorted = groupStats.values.toList()
