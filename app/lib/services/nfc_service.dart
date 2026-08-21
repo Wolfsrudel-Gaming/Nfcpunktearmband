@@ -196,32 +196,36 @@ class NfcService {
       onDiscovered: (NfcTag tag) async {
         try {
           final tagUid = _extractUid(tag);
-          final ndef = Ndef.from(tag);
-
-          if (ndef == null) {
-            onError('Tag unterstützt kein NDEF');
-            NfcManager.instance.stopSession();
-            return;
-          }
-
-          if (!ndef.isWritable) {
-            onError('Tag ist schreibgeschützt');
-            NfcManager.instance.stopSession();
-            return;
-          }
-
           final record = NdefRecord.createUri(Uri.parse(payload));
           final message = NdefMessage([record]);
 
-          final messageSize = message.byteLength;
-          if (messageSize > (ndef.maxSize)) {
-            onError('Daten zu gross für diesen Tag '
-                '($messageSize/${ndef.maxSize} Bytes)');
-            NfcManager.instance.stopSession();
-            return;
-          }
+          final ndef = Ndef.from(tag);
 
-          await ndef.write(message);
+          if (ndef != null) {
+            if (!ndef.isWritable) {
+              onError('Tag ist schreibgeschützt');
+              NfcManager.instance.stopSession();
+              return;
+            }
+
+            final messageSize = message.byteLength;
+            if (messageSize > (ndef.maxSize)) {
+              onError('Daten zu gross für diesen Tag '
+                  '($messageSize/${ndef.maxSize} Bytes)');
+              NfcManager.instance.stopSession();
+              return;
+            }
+
+            await ndef.write(message);
+          } else {
+            final formatable = NdefFormatable.from(tag);
+            if (formatable == null) {
+              onError('Tag unterstützt kein NDEF');
+              NfcManager.instance.stopSession();
+              return;
+            }
+            await formatable.format(message);
+          }
 
           try {
             await ApiClient().post('/api/participants/$participantId/nfc',
